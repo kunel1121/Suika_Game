@@ -1,7 +1,7 @@
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
-// 캔버스 크기 줄임
+// 캔버스 크기
 canvas.width = 300;
 canvas.height = 450;
 
@@ -13,7 +13,7 @@ class Fruit {
   constructor(x, stage) {
     this.x = x;
     this.y = 50;
-    this.stage = stage; // 단계 (1~8)
+    this.stage = stage; // 단계 1~8
     this.radius = 12 + stage * 5; // 단계별 크기
     this.dy = 0; // 낙하 속도
   }
@@ -48,15 +48,20 @@ class Fruit {
           let dist = Math.sqrt(dx * dx + dy * dy);
 
           if (dist < this.radius + other.radius) {
-            // 살짝 겹쳤을 때, 겹침 해소 (위로 강제 튀는거 방지)
+            // 충돌 방향 계산
             let overlap = (this.radius + other.radius) - dist;
             let angle = Math.atan2(dy, dx);
 
-            this.x += Math.cos(angle) * (overlap / 2);
-            this.y += Math.sin(angle) * (overlap / 2);
-            this.dy *= 0.3; // 충돌 후 속도 줄이기
+            // 다른 단계 과일이면 살짝 밀어서 겹침 해소
+            if (this.stage !== other.stage) {
+              this.x += Math.cos(angle) * (overlap * 0.5);
+              this.y += Math.sin(angle) * (overlap * 0.5);
 
-            // 같은 단계면 합체
+              // 속도 감속 (튕김 방지)
+              if (this.dy > 0) this.dy *= 0.2;
+            }
+
+            // 같은 단계 과일이면 합체
             if (this.stage === other.stage && this.stage < 8) {
               other.stage++;
               other.radius = 12 + other.stage * 5;
@@ -71,12 +76,12 @@ class Fruit {
   }
 }
 
-// 클릭 시 과일 생성
+// 클릭 시 과일 생성 (1~3 단계 랜덤)
 canvas.addEventListener("click", (e) => {
   if (gameOver) return;
   const rect = canvas.getBoundingClientRect();
   const x = e.clientX - rect.left;
-  const stage = Math.floor(Math.random() * 3) + 1; // 1~3단계 랜덤
+  const stage = Math.floor(Math.random() * 3) + 1;
   fruits.push(new Fruit(x, stage));
 });
 
@@ -88,12 +93,12 @@ function animate() {
     fruit.update();
   }
 
-  // 게임오버 조건 (천장 닿음)
+  // 게임오버 조건: 천장 닿음
   if (fruits.some(f => f.y - f.radius <= 0)) {
     gameOver = true;
     cancelAnimationFrame(animationId);
 
-    // 점수 계산 (과일 단계 합)
+    // 점수 계산: 모든 과일 단계 합
     let score = fruits.reduce((sum, f) => sum + f.stage, 0);
     document.getElementById("finalScore").textContent = score;
     document.getElementById("gameoverModal").style.display = "flex";
@@ -104,7 +109,19 @@ function animate() {
 }
 
 // 다시하기 버튼
+document.getElementById("restartBtn").addEventListener("click", () => {
+  document.getElementById("gameoverModal").style.display = "none";
+  fruits = [];
+  gameOver = false;
+  animate();
+});
+
+// 점수 저장 버튼 (firebase.js와 연동 가능)
 document.getElementById("saveScore").addEventListener("click", () => {
+  const name = document.getElementById("playerName").value.trim();
+  if (!name) return alert("이름을 입력하세요!");
+  // firebase 연동 함수 호출 가능
+  console.log("점수 저장:", name, document.getElementById("finalScore").textContent);
   document.getElementById("gameoverModal").style.display = "none";
   fruits = [];
   gameOver = false;
