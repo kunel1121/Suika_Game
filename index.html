@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>수박게임</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="ranking">
+    <h2>실시간 순위</h2>
+    <ol id="rankingList"></ol>
+  </div>
+  <div id="game">
+    <canvas id="gameCanvas" width="400" height="600"></canvas>
+    <div id="gameoverModal" class="modal">
+      <div class="modal-content">
+        <h3>게임 오버!</h3>
+        <p>점수: <span id="finalScore"></span></p>
+        <input type="text" id="playerName" placeholder="이름 입력">
+        <button id="saveScore">저장</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JS 파일 불러오기 -->
+  <script type="module" src="js/firebase.js"></script>
+  <script type="module" src="js/game.js"></script>
+  <script type="module" src="js/ui.js"></script>
+  <script type="module" src="js/score.js"></script>
+</body>
+</html>
