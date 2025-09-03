@@ -13,24 +13,21 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-export const db = getDatabase(app);
+const db = getDatabase(app);
 
-// 점수 저장
-export function saveScore(name, score) {
-  const scoresRef = ref(db, "scores");
-  push(scoresRef, { name, score });
+export function saveScoreToDB(name, score) {
+  const scoresRef = ref(db, 'scores');
+  return push(scoresRef, { name, score, ts: Date.now() });
 }
 
-// 점수 불러오기
-export function loadScores(callback) {
-  const scoresRef = query(ref(db, "scores"), orderByChild("score"), limitToLast(10));
-  onValue(scoresRef, snapshot => {
-    let list = [];
+export function subscribeTopScores(callback, limit = 10) {
+  const q = query(ref(db, 'scores'), orderByChild('score'), limitToLast(limit));
+  onValue(q, snapshot => {
+    const arr = [];
     snapshot.forEach(child => {
-      list.push(child.val());
+      arr.push(child.val());
     });
-    // 높은 점수부터 내림차순
-    list.sort((a, b) => b.score - a.score);
-    callback(list);
+    arr.sort((a,b)=>b.score-a.score);
+    callback(arr);
   });
 }
