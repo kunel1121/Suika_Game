@@ -1,6 +1,10 @@
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
+// 캔버스 크기 줄임
+canvas.width = 300;
+canvas.height = 450;
+
 let fruits = [];
 let gameOver = false;
 let animationId = null;
@@ -10,14 +14,17 @@ class Fruit {
     this.x = x;
     this.y = 50;
     this.stage = stage; // 단계 (1~8)
-    this.radius = 15 + stage * 5; // 단계에 따라 크기 커짐
+    this.radius = 12 + stage * 5; // 단계별 크기
     this.dy = 0; // 낙하 속도
   }
 
   draw() {
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-    ctx.fillStyle = ["#ff4d4d", "#ff9933", "#ffff66", "#66cc66", "#3399ff", "#9966ff", "#ff66cc", "#00cccc"][this.stage - 1];
+    ctx.fillStyle = [
+      "#ff4d4d", "#ff9933", "#ffff66", "#66cc66", 
+      "#3399ff", "#9966ff", "#ff66cc", "#00cccc"
+    ][this.stage - 1];
     ctx.fill();
     ctx.closePath();
   }
@@ -41,15 +48,19 @@ class Fruit {
           let dist = Math.sqrt(dx * dx + dy * dy);
 
           if (dist < this.radius + other.radius) {
-            // 겹침 → 위에 올려둠
-            this.y = other.y - (this.radius + other.radius) / 2;
-            this.dy = 0;
+            // 살짝 겹쳤을 때, 겹침 해소 (위로 강제 튀는거 방지)
+            let overlap = (this.radius + other.radius) - dist;
+            let angle = Math.atan2(dy, dx);
 
-            // 같은 단계 → 합체
+            this.x += Math.cos(angle) * (overlap / 2);
+            this.y += Math.sin(angle) * (overlap / 2);
+            this.dy *= 0.3; // 충돌 후 속도 줄이기
+
+            // 같은 단계면 합체
             if (this.stage === other.stage && this.stage < 8) {
               other.stage++;
-              other.radius = 15 + other.stage * 5;
-              fruits.splice(fruits.indexOf(this), 1); // 현재 과일 삭제
+              other.radius = 12 + other.stage * 5;
+              fruits.splice(fruits.indexOf(this), 1);
             }
           }
         }
@@ -65,7 +76,7 @@ canvas.addEventListener("click", (e) => {
   if (gameOver) return;
   const rect = canvas.getBoundingClientRect();
   const x = e.clientX - rect.left;
-  const stage = Math.floor(Math.random() * 3) + 1; // 1~3 단계
+  const stage = Math.floor(Math.random() * 3) + 1; // 1~3단계 랜덤
   fruits.push(new Fruit(x, stage));
 });
 
