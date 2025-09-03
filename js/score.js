@@ -1,23 +1,46 @@
-import { saveScore, loadScores } from "./firebase.js";
-import { showGameOverModal } from "./ui.js";
+import { saveScoreToDB, subscribeTopScores } from "./firebase.js";
+import { showGameOverModal, hideGameOverModal } from "./ui.js";
 
-export function gameOverHandler(score) {
+let lastScore = 0;
+
+export function gameOverSequence(score) {
+  lastScore = score;
   showGameOverModal(score);
+}
 
-  document.getElementById("saveScore").onclick = () => {
-    const name = document.getElementById("playerName").value || "익명";
-    saveScore(name, score);
-    document.getElementById("gameoverModal").style.display = "none";
+export function setupScoreUI() {
+  setupModalSave();
+  subscribeTopScores(updateRanking);
+}
+
+function updateRanking(list) {
+  const ol = document.getElementById('rankingList');
+  ol.innerHTML = '';
+  list.forEach(item=>{
+    const li = document.createElement('li');
+    const name = item.name || '익명';
+    li.textContent = `${name} - ${item.score}`;
+    ol.appendChild(li);
+  });
+}
+
+function setupModalSave() {
+  const saveBtn = document.getElementById('saveScore');
+  saveBtn.onclick = async ()=>{
+    const nameInput = document.getElementById('playerName');
+    const name = (nameInput.value || '익명').slice(0,20);
+    try{
+      await saveScoreToDB(name, lastScore);
+    }catch(e){
+      console.error(e);
+    }
+    hideGameOverModal();
   };
 }
 
-// 실시간 순위 업데이트
-const rankingList = document.getElementById("rankingList");
-loadScores(scores => {
-  rankingList.innerHTML = "";
-  scores.forEach(s => {
-    const li = document.createElement("li");
-    li.textContent = `${s.name} - ${s.score}`;
-    rankingList.appendChild(li);
+export function attachModalHandlers(restartCallback) {
+  document.getElementById('restartBtn').addEventListener('click',()=>{
+    hideGameOverModal();
+    restartCallback();
   });
-});
+}
