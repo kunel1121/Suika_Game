@@ -30,46 +30,44 @@ class Fruit {
   }
 
   update() {
-    if (!gameOver) {
-      this.dy += 0.3; // 중력
-      this.y += this.dy;
+    if (gameOver) return;
 
-      // 바닥 충돌
-      if (this.y + this.radius > canvas.height) {
-        this.y = canvas.height - this.radius;
-        this.dy = 0;
-      }
+    let onSurface = false;
 
-      // 다른 과일과 충돌
-      for (let other of fruits) {
-        if (other !== this) {
-          let dx = this.x - other.x;
-          let dy = this.y - other.y;
-          let dist = Math.sqrt(dx * dx + dy * dy);
+    // 바닥 충돌
+    if (this.y + this.radius >= canvas.height) {
+      this.y = canvas.height - this.radius;
+      this.dy = 0;
+      onSurface = true;
+    }
 
-          if (dist < this.radius + other.radius) {
-            // 충돌 방향 계산
-            let overlap = (this.radius + other.radius) - dist;
-            let angle = Math.atan2(dy, dx);
+    // 다른 과일과 충돌
+    for (let other of fruits) {
+      if (other !== this) {
+        let dx = this.x - other.x;
+        let dy = this.y - other.y;
+        let dist = Math.sqrt(dx * dx + dy * dy);
 
-            // 다른 단계 과일이면 살짝 밀어서 겹침 해소
-            if (this.stage !== other.stage) {
-              this.x += Math.cos(angle) * (overlap * 0.5);
-              this.y += Math.sin(angle) * (overlap * 0.5);
-
-              // 속도 감속 (튕김 방지)
-              if (this.dy > 0) this.dy *= 0.2;
-            }
-
-            // 같은 단계 과일이면 합체
-            if (this.stage === other.stage && this.stage < 8) {
-              other.stage++;
-              other.radius = 12 + other.stage * 5;
-              fruits.splice(fruits.indexOf(this), 1);
-            }
+        if (dist < this.radius + other.radius) {
+          // 같은 단계 과일이면 합체
+          if (this.stage === other.stage && this.stage < 8) {
+            other.stage++;
+            other.radius = 12 + other.stage * 5;
+            fruits.splice(fruits.indexOf(this), 1);
+            return; // 합체 후 종료
+          } else {
+            // 다른 단계 과일이면 튀지 않고 멈춤
+            this.dy = 0;
+            onSurface = true;
           }
         }
       }
+    }
+
+    // 중력 적용
+    if (!onSurface) {
+      this.dy += 0.3;
+      this.y += this.dy;
     }
 
     this.draw();
@@ -120,7 +118,6 @@ document.getElementById("restartBtn").addEventListener("click", () => {
 document.getElementById("saveScore").addEventListener("click", () => {
   const name = document.getElementById("playerName").value.trim();
   if (!name) return alert("이름을 입력하세요!");
-  // firebase 연동 함수 호출 가능
   console.log("점수 저장:", name, document.getElementById("finalScore").textContent);
   document.getElementById("gameoverModal").style.display = "none";
   fruits = [];
